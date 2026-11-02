@@ -21,6 +21,7 @@ export interface EducationItem {
   institution: string;
   period: string;
   status: 'Currently Pursuing' | 'Completed';
+  gradeOrScore?: string;
   highlights: string[];
   keySubjects: string[];
 }
@@ -56,6 +57,7 @@ export interface ProfileData {
   name: string;
   title: string;
   typingTitles: string[];
+  photoUrl?: string;
   email: string;
   phone: string;
   location: string;

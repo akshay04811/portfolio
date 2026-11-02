@@ -82,6 +82,27 @@ export const DEFAULT_EDUCATION: EducationItem[] = [
       'Operating Systems & Shell Basics',
       'System Analysis & Design'
     ]
+  },
+  {
+    id: 'edu-plus-two',
+    degree: 'Higher Secondary School Examination (+2 / 12th)',
+    field: 'Science Stream (Computer Science & Mathematics)',
+    institution: 'Higher Secondary School',
+    period: '2019 – 2021',
+    status: 'Completed',
+    gradeOrScore: 'First Class / Distinction',
+    highlights: [
+      'Completed Higher Secondary (+2) with focus on Computer Science, Mathematics, Physics, and Chemistry',
+      'Developed foundational computational skills, logical reasoning, and basic coding problem-solving',
+      'Active participant in school science fairs and computer science laboratory sessions'
+    ],
+    keySubjects: [
+      'Computer Science (Basics of Programming)',
+      'Mathematics (Calculus, Statistics & Logic)',
+      'Physics',
+      'Chemistry',
+      'English'
+    ]
   }
 ];
 

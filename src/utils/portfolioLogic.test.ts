@@ -120,7 +120,7 @@ test('filterSkills filters by category correctly', () => {
   assert.equal(prog[0].name, 'Python');
 });
 
-test('generateAtsResumeText creates formatted text containing key profile items', () => {
+test('generateAtsResumeText creates formatted text containing key profile items and education score', () => {
   const mockProfile: ProfileData = {
     name: 'Akshay B',
     title: 'MCA Student | Aspiring Software Engineer',
@@ -138,9 +138,25 @@ test('generateAtsResumeText creates formatted text containing key profile items'
     availableForHire: true
   };
 
-  const text = generateAtsResumeText(mockProfile, [], [], [], []);
+  const sampleEducation: EducationItem[] = [
+    {
+      id: 'edu-plus-two',
+      degree: 'Higher Secondary School Examination (+2 / 12th)',
+      field: 'Science Stream (Computer Science)',
+      institution: 'Higher Secondary School',
+      period: '2019 – 2021',
+      status: 'Completed',
+      gradeOrScore: 'First Class / Distinction',
+      highlights: ['Completed +2 with focus on CS and Maths'],
+      keySubjects: ['Computer Science', 'Mathematics']
+    }
+  ];
+
+  const text = generateAtsResumeText(mockProfile, sampleEducation, [], [], []);
   assert.ok(text.includes('AKSHAY B'));
   assert.ok(text.includes('akshaykukku25460@gmail.com'));
   assert.ok(text.includes('CAREER OBJECTIVE'));
-  assert.ok(text.includes('Seeking an entry-level opportunity'));
+  assert.ok(text.includes('Higher Secondary School Examination (+2 / 12th)'));
+  assert.ok(text.includes('Grade/Score: First Class / Distinction'));
 });
+

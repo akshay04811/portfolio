@@ -105,7 +105,7 @@ export function generateAtsResumeText(
   const eduSection = education
     .map(
       (e) =>
-        `${e.degree} - ${e.field} (${e.status})\n${e.institution} | ${e.period}\nHighlights: ${e.highlights.join(
+        `${e.degree} - ${e.field} (${e.status})${e.gradeOrScore ? ` | Grade/Score: ${e.gradeOrScore}` : ''}\n${e.institution} | ${e.period}\nHighlights: ${e.highlights.join(
           ', '
         )}\nKey Subjects: ${e.keySubjects.join(', ')}`
     )
@@ -171,6 +171,7 @@ ${profile.interests.join(', ')}
 }
 
 const STORAGE_KEY = 'akshay_portfolio_profile_v1';
+const EDUCATION_STORAGE_KEY = 'akshay_portfolio_education_v1';
 
 export function saveProfileToStorage(profile: ProfileData): void {
   try {
@@ -189,4 +190,81 @@ export function loadProfileFromStorage(defaultProfile: ProfileData): ProfileData
   } catch {
     return defaultProfile;
   }
+}
+
+export function saveEducationToStorage(education: EducationItem[]): void {
+  try {
+    localStorage.setItem(EDUCATION_STORAGE_KEY, JSON.stringify(education));
+  } catch {
+    // local storage might be restricted or full
+  }
+}
+
+export function loadEducationFromStorage(defaultEducation: EducationItem[]): EducationItem[] {
+  try {
+    const raw = localStorage.getItem(EDUCATION_STORAGE_KEY);
+    if (!raw) return defaultEducation;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return defaultEducation;
+  } catch {
+    return defaultEducation;
+  }
+}
+
+/**
+ * Resizes and compresses user-uploaded photo to a clean, fast data URL
+ * to avoid exceeding browser localStorage quotas while looking sharp.
+ */
+export function processImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Please upload an image file (PNG, JPG, JPEG, WEBP).'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDimension = 420;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(readerEvent.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        // Use high-quality JPEG compression
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        resolve(compressedDataUrl);
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image.'));
+      img.src = readerEvent.target?.result as string;
+    };
+
+    reader.onerror = () => reject(new Error('Failed to read image file.'));
+    reader.readAsDataURL(file);
+  });
 }

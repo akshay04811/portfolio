@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   SlidersHorizontal,
   X,
   RotateCcw,
   Save,
   CheckCircle2,
-  Info
+  Info,
+  Camera,
+  Trash2
 } from 'lucide-react';
 import { ProfileData } from '../types/portfolio';
 import { DEFAULT_PROFILE } from '../data/defaultProfile';
+import { processImageFile } from '../utils/portfolioLogic';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -25,12 +28,24 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<ProfileData>(currentProfile);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await processImageFile(file);
+      setFormData((prev) => ({ ...prev, photoUrl: dataUrl }));
+    } catch {
+      // ignore
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -63,7 +78,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 Customize Personal Details
               </h3>
               <p className="text-xs text-slate-400">
-                Update your contact info, social handles, or objective anytime
+                Update your profile photo, contact info, social handles, or objective anytime
               </p>
             </div>
           </div>
@@ -86,6 +101,51 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             <span>
               All modifications are stored in your local browser profile and instantly update the entire website and ATS resume download.
             </span>
+          </div>
+
+          {/* Profile Photo Upload Row */}
+          <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-full bg-slate-800 border-2 border-purple-500/40 overflow-hidden flex items-center justify-center shrink-0">
+                {formData.photoUrl ? (
+                  <img src={formData.photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-bold text-sm text-purple-300">AB</span>
+                )}
+              </div>
+              <div>
+                <span className="font-semibold text-white block">Profile Photo</span>
+                <span className="text-[11px] text-slate-400">Upload your headshot or keep the AB monogram</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-xl bg-blue-600/80 hover:bg-blue-600 text-white font-medium flex items-center gap-1.5 transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Upload</span>
+              </button>
+              {formData.photoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, photoUrl: undefined }))}
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 transition-colors"
+                  title="Remove Photo"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Full Name & Headline */}

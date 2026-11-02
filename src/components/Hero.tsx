@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileDown,
   ArrowRight,
@@ -9,19 +9,49 @@ import {
   GraduationCap,
   Code2,
   CheckCircle2,
-  Briefcase
+  Briefcase,
+  Camera,
+  UploadCloud,
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ProfileData } from '../types/portfolio';
+import { processImageFile } from '../utils/portfolioLogic';
 
 interface HeroProps {
   profile: ProfileData;
   onOpenResume: () => void;
+  onUpdatePhoto: (photoUrl?: string) => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ profile, onOpenResume }) => {
+export const Hero: React.FC<HeroProps> = ({ profile, onOpenResume, onUpdatePhoto }) => {
   const [titleIndex, setTitleIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const dataUrl = await processImageFile(file);
+      onUpdatePhoto(dataUrl);
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to process photo.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUpdatePhoto(undefined);
+  };
 
   // Animated typing effect
   useEffect(() => {
@@ -178,40 +208,123 @@ export const Hero: React.FC<HeroProps> = ({ profile, onOpenResume }) => {
               {/* Glassmorphic Profile Card */}
               <div className="relative bg-[#0d1222]/90 backdrop-blur-xl rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl space-y-6">
                 
+                {/* Hidden File Input for User Photo */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  accept="image/*"
+                  className="hidden"
+                  aria-label="Upload your profile photo"
+                />
+
                 {/* Visual Avatar / Photo Area */}
-                <div className="relative mx-auto w-48 h-48 sm:w-56 sm:h-56 rounded-2xl p-1 bg-gradient-to-tr from-blue-500 via-indigo-500 to-purple-500 shadow-xl group">
+                <div className="relative mx-auto w-52 h-52 sm:w-60 sm:h-60 rounded-2xl p-1 bg-gradient-to-tr from-blue-500 via-indigo-500 to-purple-500 shadow-xl group">
                   <div className="w-full h-full rounded-[14px] bg-[#070b16] overflow-hidden flex flex-col items-center justify-center relative">
                     
                     {/* Futuristic Developer Portrait Canvas */}
-                    <div className="w-full h-full bg-gradient-to-b from-blue-950/60 to-slate-950 flex flex-col items-center justify-center p-4 text-center select-none relative">
+                    <div className="w-full h-full bg-gradient-to-b from-blue-950/60 to-slate-950 flex flex-col items-center justify-center p-3 text-center select-none relative">
                       {/* Grid background on avatar */}
                       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:16px_16px]" />
 
-                      {/* Stylized Developer Silhouette / Monogram */}
-                      <div className="relative z-10 w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-xl shadow-blue-500/30 mb-3">
-                        <div className="w-full h-full rounded-full bg-[#0b1021] flex items-center justify-center">
-                          <span className="text-3xl font-extrabold tracking-wider bg-gradient-to-br from-blue-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
-                            AB
-                          </span>
-                        </div>
-                        {/* Live active ring indicator */}
-                        <div className="absolute bottom-0 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#070b16] shadow-sm flex items-center justify-center">
-                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                        </div>
-                      </div>
+                      {profile.photoUrl ? (
+                        /* User's Uploaded Photo View */
+                        <div className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-blue-400 via-indigo-400 to-purple-500 shadow-xl shadow-blue-500/25 mb-2 group/photo">
+                          <img
+                            src={profile.photoUrl}
+                            alt={profile.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                          {/* Live active ring indicator */}
+                          <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#070b16] shadow-sm flex items-center justify-center">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          </div>
 
-                      <span className="relative z-10 text-white font-bold text-base tracking-wide">
+                          {/* Hover Overlay to Change or Remove */}
+                          <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="p-1.5 rounded-full bg-blue-600 text-white hover:scale-110 transition-transform"
+                              title="Change Photo"
+                              aria-label="Change Photo"
+                            >
+                              <Camera className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRemovePhoto}
+                              className="p-1.5 rounded-full bg-rose-600 text-white hover:scale-110 transition-transform"
+                              title="Remove Photo"
+                              aria-label="Remove Photo"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Default AB Monogram with Click-to-Upload */
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-xl shadow-blue-500/30 mb-2 cursor-pointer group/ab hover:scale-105 transition-transform"
+                          title="Click to upload your photo"
+                        >
+                          <div className="w-full h-full rounded-full bg-[#0b1021] flex flex-col items-center justify-center relative overflow-hidden">
+                            <span className="text-3xl font-extrabold tracking-wider bg-gradient-to-br from-blue-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent group-hover/ab:opacity-20 transition-opacity">
+                              AB
+                            </span>
+                            
+                            {/* Hover overlay hint */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover/ab:opacity-100 bg-blue-950/80 transition-opacity text-[10px] text-blue-200 font-medium space-y-1">
+                              <Camera className="w-5 h-5 text-blue-300" />
+                              <span>Upload Photo</span>
+                            </div>
+                          </div>
+
+                          {/* Live active ring indicator */}
+                          <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#070b16] shadow-sm flex items-center justify-center">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          </div>
+                        </div>
+                      )}
+
+                      <span className="relative z-10 text-white font-bold text-sm tracking-wide">
                         {profile.name}
                       </span>
-                      <span className="relative z-10 text-xs font-mono text-blue-400 mt-0.5">
+                      <span className="relative z-10 text-[11px] font-mono text-blue-400">
                         @akshay-b • MCA
                       </span>
 
-                      {/* Small badge */}
-                      <div className="relative z-10 mt-3 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-[10px] text-blue-300 font-medium">
-                        <Sparkles className="w-3 h-3 text-purple-400" />
-                        <span>Ready to build & learn</span>
+                      {/* Photo Upload/Change Action Button */}
+                      <div className="relative z-10 mt-2 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-blue-500/15 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 flex items-center gap-1 transition-all active:scale-95"
+                        >
+                          <Camera className="w-3 h-3 text-blue-400" />
+                          <span>{isUploading ? 'Uploading...' : profile.photoUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                        </button>
+
+                        {profile.photoUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemovePhoto}
+                            className="p-1 rounded-full text-[10px] bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-white/10 transition-colors"
+                            title="Reset to AB Monogram"
+                            aria-label="Reset to AB Monogram"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
+
+                      {uploadError && (
+                        <p className="relative z-10 text-[10px] text-rose-400 mt-1">
+                          {uploadError}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
